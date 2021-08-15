@@ -1,16 +1,22 @@
-# Sudoku solver gui - use python3
 from tkinter import *  # Tk, Label, Button, Menu, Text, Entry
+from tkinter import ttk
 # from tkinter import LEFT, RIGHT, W, RAISED, GROOVE, RIDGE
 import time
 import numpy as np
 
+from sudoku_solver import Sudoku
+
 
 class SudokuGUI:
-    def __init__(self):  # , master):
-        # self.master = master
+    def __init__(self):
         self.root = Tk()
-        self.board = [[], [], [], [], [], [], [], [], []]
+        self.sudoku_grid = Sudoku(np.zeros((9, 9)).astype(int))
         self.root.title("Sudoku")
+        self.init_grid()
+        self.init_buttons()
+        self.root.mainloop()
+
+    def init_grid(self):
         self.entries = []
         for n in range(9 ** 2):
             self.entries.append(Entry(self.root, width=3, fg="black"))
@@ -19,6 +25,7 @@ class SudokuGUI:
             c = int(n % 9) + (int(n % 9) // 3)
             self.entries[n].grid(row=r, column=c)
 
+    def init_buttons(self):
         self.example_button = Button(self.root, text="Example", command=self.input_example)
         self.example_button.grid(row=1, column=14)
 
@@ -42,10 +49,10 @@ class SudokuGUI:
 
         self.quit_button = Button(self.root, text="Quit", command=self.root.quit)
         self.quit_button.grid(row=10, column=14)
-        self.root.mainloop()
 
     def input_example(self):
-        my_board = [
+        self.clear_entries()
+        my_board = np.array([
             [7, 8, 0, 4, 0, 0, 1, 2, 0],
             [6, 0, 0, 0, 7, 5, 0, 0, 9],
             [0, 0, 0, 6, 0, 1, 0, 7, 8],
@@ -55,195 +62,132 @@ class SudokuGUI:
             [0, 7, 0, 3, 0, 0, 0, 1, 2],
             [1, 2, 0, 0, 0, 7, 4, 0, 0],
             [0, 4, 9, 2, 0, 6, 0, 0, 7]
-        ]
+        ])
+        self.sudoku_grid.board = my_board
         for i in range(9):
             for j in range(9):
                 if my_board[i][j] == 0:
                     continue
                 self.entries[i * 9 + j].insert(END, my_board[i][j])
-                # self.entries[i*9+j].config({"background":"blue"})
 
     def clear_entries(self):
         """Clears the entries in the GUI"""
         for i in range(9 ** 2):
             self.entries[i].delete(0, END)
             self.entries[i].config({"background": "white"})
-            # root.update()
+            self.root.update()
 
     def generate(self):
+        self.sudoku_grid.board = np.zeros((9, 9)).astype(int)
         self.clear_entries()
-        self.get_board()
+        self.get_gui_board()
         difficulty = self.generate_slider.get()
         # Solve then strip back
-        first_row = np.random.permutation(range(1, 10))
+        rand_first_row = np.random.permutation(range(1, 10))
         for i in range(9):
-            self.board[0][i] = first_row[i]
-            self.entries[i].insert(END, first_row[i])
+            self.sudoku_grid.board[0, i] = rand_first_row[i]
+            self.entries[i].insert(END, rand_first_row[i])
+            # self.root.update()
         self.solve()
 
         to_remove = 35 + 2 * difficulty
         rand_positions = np.random.randint(81, size=(1, to_remove))
-        for j in range(to_remove):
-            pos = rand_positions[0][j]
+        # for j in range(to_remove):
+        # pos = rand_positions[0][j]
+        for pos in rand_positions[0]:
             self.entries[pos].delete(0, END)
-        self.get_board()
+        self.get_gui_board()
         for i in range(9 ** 2):
             self.entries[i].config({"background": "white"})
-
-        # By insertion
-        # for i in range(17+20-2*difficulty):
-        #     new_num = randint(1,9)
-        #     x = randint(0,8)
-        #     y = randint(0,8)
-        #     if self.is_valid(new_num,[x,y]) and self.board[x][y]==0:
-        #         self.board[x][y]=new_num
-        #         self.entries[x*9+y].insert(END,new_num)
-        #     else:
-        #         i-=1
+        self.root.update()
 
     def check(self):
         """Checks if complete and valid solution"""
-        # change colour font for valid/not valid
-        valid = 1
-        self.get_board()
+        # TODO: refactor...
+        valid = True
+        self.get_gui_board()
         transpose_board = [[], [], [], [], [], [], [], [], []]
 
         boxes_as_rows = [[], [], [], [], [], [], [], [], []]
         for r in range(9):
-            iBox = r // 3
-            jBox = r % 3
-            for i in range(iBox * 3, iBox * 3 + 3):
-                for j in range(jBox * 3, jBox * 3 + 3):
-                    boxes_as_rows[r].append(self.board[i][j])
-
+            i_box = r // 3
+            j_box = r % 3
+            for i in range(i_box * 3, i_box * 3 + 3):
+                for j in range(j_box * 3, j_box * 3 + 3):
+                    boxes_as_rows[r].append(self.sudoku_grid.board[i, j])
             for c in range(9):
-                transpose_board[r].append(self.board[c][r])
+                transpose_board[r].append(self.sudoku_grid.board[c, r])
                 self.entries[r * 9 + c].config({"background": "white"})
 
         for c in range(9):  # check rows
-            row = self.board[c][:]
+            row = self.sudoku_grid.board[c, :]
             col = transpose_board[c][:]
-            rows_duplicates = any(row.count(e) > 1 for e in row)
-            cols_duplicates = any(col.count(e) > 1 for e in row)
-            box_duplicates = any(boxes_as_rows.count(e) > 1 for e in row)
-            # if rows_duplicates==True or cols_duplicates==True or box_duplicates==True:
-            #     for i in range(9**2):
-            #         self.entries[i].config({"background":"red"})
-            #     return(0)
-            if rows_duplicates == True:
+            if len(row) != len(np.unique(row)):
                 for i in range(9):
                     self.entries[c * 9 + i].config({"background": "red"})
-                valid = 0
-            if cols_duplicates == True:
+                valid = False
+            if len(col) != len(np.unique(col)):
                 for i in range(9):
                     self.entries[i * 9 + c].config({"background": "red"})
-                valid = 0
-            if box_duplicates == True:
-                iBox = c // 3
-                jBox = c % 3
-                for i in range(iBox * 3, iBox * 3 + 3):
-                    for j in range(jBox * 3, jBox * 3 + 3):
+                valid = False
+            if len(boxes_as_rows) != len(np.unique(boxes_as_rows)):
+                i_box = c // 3
+                j_box = c % 3
+                for i in range(i_box * 3, i_box * 3 + 3):
+                    for j in range(j_box * 3, j_box * 3 + 3):
                         self.entries[i * 9 + j].config({"background": "red"})
-                valid = 0
+                valid = False
         if valid:
             for i in range(9 ** 2):
                 self.entries[i].config({"background": "green"})
-        return (valid)
+        return valid
 
-    def get_board(self):
+    def get_gui_board(self):
         """Gets entries in GUI and returns a matrix of board entries"""
-        self.board = [[], [], [], [], [], [], [], [], []]
         elements = [e.get() for e in self.entries]
         for i in range(9):
             for j in range(9):
                 if elements[i * 9 + j] == '':
-                    self.board[i].append(0)
+                    self.sudoku_grid.board[i, j] = 0
                 else:
-                    self.board[i].append(int(elements[i * 9 + j]))
-        return (self.board)
+                    self.sudoku_grid.board[i, j] = int(elements[i * 9 + j])
 
     def start_solve(self):
         print("Solving")
         start_time = time.time()
-        self.board = self.get_board()
-        self.print_board()
+        self.get_gui_board()
+        print(repr(self.sudoku_grid))
         self.solve()
         print("--- %s seconds ---" % (time.time() - start_time))
 
     def solve(self):
-        nextPos = self.next_empty()
-        if nextPos == 0:  # finished
+        next_pos = self.sudoku_grid.next_empty()
+        if not next_pos:  # finished
             print("Finished:")
-            self.print_board()
-            return (1)
+            # self.print_board()
+            print(repr(self.sudoku_grid))
+            return True
         for number in range(1, 10):  # try values
-            # check if valid with number
-            valid = self.is_valid(number, nextPos)
-            if valid:
-                self.board[nextPos[0]][nextPos[1]] = number
-                self.place_value(number, nextPos)
-                self.entries[nextPos[0] * 9 + nextPos[1]].config({"background": "green"})
-                # root.update()
+            if self.sudoku_grid.is_valid(number, next_pos):
+                self.sudoku_grid.board[next_pos[0], next_pos[1]] = number
+                self.place_value(number, next_pos)
+                self.entries[next_pos[0] * 9 + next_pos[1]].config({"background": "green"})
+                self.root.update()
                 if self.solve():
-                    return (1)
-            self.board[nextPos[0]][nextPos[1]] = 0
-            self.place_value(0, nextPos)
-            self.entries[nextPos[0] * 9 + nextPos[1]].config({"background": "red"})
+                    return True
+            self.sudoku_grid.board[next_pos[0], next_pos[1]] = 0
+            self.place_value(0, next_pos)
+            self.entries[next_pos[0] * 9 + next_pos[1]].config({"background": "red"})
             self.root.update()
-        return (0)
-
-    def print_board(self, ):
-        for i in range(9):
-            if i % 3 == 0:
-                print("___________________")
-            for j in range(9):
-                if j % 3 == 0:
-                    print("|", end="")  # ,
-                else:
-                    print(' ', end="")  # ,
-                if j == 8:
-                    print(self.board[i][j])
-                else:
-                    print(self.board[i][j], end="")  # ,
-        print("___________________")
-
-    def next_empty(self):
-        for i in range(9):
-            for j in range(9):
-                if self.board[i][j] == 0:
-                    return ([i, j])
-        return (0)
-
-    def is_valid(self, num, pos):
-        """"Checks validity of board with new number num in position pos"""
-        # check row:
-        for c in range(9):
-            if self.board[pos[0]][c] == num and c != pos[1]:  # invalid
-                return (0)
-        # check column:
-        for r in range(9):
-            if self.board[r][pos[1]] == num and r != pos[0]:  # invalid
-                return (0)
-        # check box:
-        iBox = pos[0] // 3  # integer division
-        jBox = pos[1] // 3
-        for i in range(iBox * 3, iBox * 3 + 3):
-            for j in range(jBox * 3, jBox * 3 + 3):
-                if self.board[i][j] == num and [i, j] != pos:
-                    return (0)
-        return (1)
+        return False
 
     def place_value(self, num, pos):
         self.entries[pos[0] * 9 + pos[1]].delete(0, END)
         self.entries[pos[0] * 9 + pos[1]].insert(END, num)
-        # self.entries[pos[0] *9 +pos[1]].config({"background":"green"})
-        # root.update()
+        self.entries[pos[0] * 9 + pos[1]].config({"background": "green"})
 
 
 def main():
-    # root = Tk()
-    # myGUI = SudokuGUI(root)
-    # root.mainloop()
     app = SudokuGUI()
 
     print("--------------------------")

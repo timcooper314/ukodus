@@ -1,4 +1,5 @@
 import time
+import numpy as np
 
 
 class Sudoku:
@@ -65,7 +66,7 @@ class Sudoku:
 
 
 def main():
-    input_board = [
+    input_board = np.array([
         [7, 8, 0, 4, 0, 0, 1, 2, 0],
         [6, 0, 0, 0, 7, 5, 0, 0, 9],
         [0, 0, 0, 6, 0, 1, 0, 7, 8],
@@ -75,7 +76,7 @@ def main():
         [0, 7, 0, 3, 0, 0, 0, 1, 2],
         [1, 2, 0, 0, 0, 7, 4, 0, 0],
         [0, 4, 9, 2, 0, 6, 0, 0, 7]
-    ]
+    ])
     sudoku_board = Sudoku(input_board)
     print(repr(sudoku_board))
     sudoku_board.solve()
