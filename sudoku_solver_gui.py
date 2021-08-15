@@ -26,28 +26,28 @@ class SudokuGUI:
             self.entries[n].grid(row=r, column=c)
 
     def init_buttons(self):
-        self.example_button = Button(self.root, text="Example", command=self.input_example)
+        self.example_button = ttk.Button(self.root, text="Example", command=self.input_example)
         self.example_button.grid(row=1, column=14)
 
-        self.generate_button = Button(self.root, text="Generate", command=self.generate)
+        self.generate_button = ttk.Button(self.root, text="Generate", command=self.generate)
         self.generate_button.grid(row=3, column=14)
 
         self.generate_slider = Scale(self.root, from_=0, to=10, orient=HORIZONTAL)
         self.generate_slider.grid(row=4, column=14)
 
-        self.difficulty_label = Label(self.root, text="Difficulty")
+        self.difficulty_label = ttk.Label(self.root, text="Difficulty")
         self.difficulty_label.grid(row=5, column=14)
 
-        self.solve_button = Button(self.root, text="Solve", command=self.start_solve)
+        self.solve_button = ttk.Button(self.root, text="Solve", command=self.start_solve)
         self.solve_button.grid(row=6, column=14)
 
-        self.check_button = Button(self.root, text="Check", command=self.check)
+        self.check_button = ttk.Button(self.root, text="Check", command=self.check)
         self.check_button.grid(row=7, column=14)
 
-        self.clear_button = Button(self.root, text="Clear", command=self.clear_entries)
+        self.clear_button = ttk.Button(self.root, text="Clear", command=self.clear_entries)
         self.clear_button.grid(row=9, column=14)
 
-        self.quit_button = Button(self.root, text="Quit", command=self.root.quit)
+        self.quit_button = ttk.Button(self.root, text="Quit", command=self.root.quit)
         self.quit_button.grid(row=10, column=14)
 
     def input_example(self):
@@ -87,13 +87,10 @@ class SudokuGUI:
         for i in range(9):
             self.sudoku_grid.board[0, i] = rand_first_row[i]
             self.entries[i].insert(END, rand_first_row[i])
-            # self.root.update()
         self.solve()
 
         to_remove = 35 + 2 * difficulty
         rand_positions = np.random.randint(81, size=(1, to_remove))
-        # for j in range(to_remove):
-        # pos = rand_positions[0][j]
         for pos in rand_positions[0]:
             self.entries[pos].delete(0, END)
         self.get_gui_board()
