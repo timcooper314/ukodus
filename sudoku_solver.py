@@ -5,26 +5,28 @@ class Sudoku:
     def __init__(self, board):
         self.board = board
 
-    def print_board(self):
+    def __repr__(self):
+        m = ""
         for i in range(9):
             if i % 3 == 0:
-                print("___________________")
+                m += "_______________________________\n"
             for j in range(9):
                 if j % 3 == 0:
-                    print("|", end="")  # ,
+                    m += " | "
                 else:
-                    print(' ', end="")  # ,
+                    m += "  "
                 if j == 8:
-                    print(self.board[i][j])
+                    m += f"{str(self.board[i][j])}\n"
                 else:
-                    print(self.board[i][j], end="")  # ,
-        print("___________________")
+                    m += str(self.board[i][j])
+        m += "_______________________________\n"
+        return m
 
     def solve(self):
         next_pos = self.next_empty()
         if not next_pos:  # finished
             print("Finished:")
-            self.print_board()
+            print(repr(self))
             return True
         for number in range(1, 10):  # try values
             # check if valid with number
@@ -53,10 +55,10 @@ class Sudoku:
             if self.board[r][pos[1]] == num and r != pos[0]:  # invalid
                 return False
         # check box:
-        iBox = pos[0] // 3  # integer division
-        jBox = pos[1] // 3
-        for i in range(iBox * 3, iBox * 3 + 3):
-            for j in range(jBox * 3, jBox * 3 + 3):
+        i_box = pos[0] // 3  # integer division
+        j_box = pos[1] // 3
+        for i in range(i_box * 3, i_box * 3 + 3):
+            for j in range(j_box * 3, j_box * 3 + 3):
                 if self.board[i][j] == num and [i, j] != pos:
                     return False
         return True
@@ -75,10 +77,12 @@ def main():
         [0, 4, 9, 2, 0, 6, 0, 0, 7]
     ]
     sudoku_board = Sudoku(input_board)
-    sudoku_board.print_board()
+    print(repr(sudoku_board))
     sudoku_board.solve()
     print("--------------------------")
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
